@@ -101,13 +101,13 @@ cp jovyan.tar.gz fmyar-diploma-test
 
 #### VM2
 
-(делаем из под рута)
-
 запускаем докер образ jupyter-lab с нужными флагами, и в старте делаем /bin/true, это нужно для того чтобы создать контейнер с нужными volume.
 
 ```shell
-docker run  --user root -v /home/fmyar/jovyan:/home/jovyan/ -e CHOWN_HOME=yes -e CHOWN_HOME_OPTS='-R' --name jupyter -p 8888:8888 jupyter/scipy-notebook /bin/true
+sudo docker run  --user root -v ~/jovyan:/home/jovyan/ -e CHOWN_HOME=yes -e CHOWN_HOME_OPTS='-R' --name jupyter -p 8888:8888 jupyter/scipy-notebook /bin/true
 ```
+
+(делаем из под рута)
 
 Копируем файлы с s3, и разархивируем их
 
