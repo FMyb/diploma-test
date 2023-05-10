@@ -30,6 +30,7 @@ sudo nano /etc/criu/runc.conf
 ```
 tcp-close
 file-locks
+log-file "dir to log"
 ```
 
 P.S. tcp-close -- при переносе закрываем tcp соедениние, если хотим оставлять пишем tcp-established (https://criu.org/TCP_connection)
@@ -69,6 +70,12 @@ sudo systemctl restart docker
 sudo apt install s3fs
 ```
 
+### отключение swap'a
+
+```
+sudo swapoff -a 
+```
+
 ### Перенос состояния
 
 #### VM1
@@ -76,10 +83,25 @@ sudo apt install s3fs
 стартуем jupyter-lab образ докера, с прокинутым volume и правами root для jovyan. 
 
 ```shell
-sudo docker run --user root -v ~/jovyan:/home/jovyan/ -e CHOWN_HOME=yes -e CHOWN_HOME_OPTS='-R'  --name jupyter -p 8888:8888  jupyter/scipy-notebook start-notebook.sh --NotebookNotary.db_file=:memory:
+sudo docker run --user root -v ~/jovyan:/home/jovyan/ -v ~/pips:/pips -e CHOWN_HOME=yes -e CHOWN_HOME_OPTS='-R' -e CHOWN_EXTRA="/pips" -e PYTHONPATH="/pips" --name jupyter -p 8888:8888  jupyter/scipy-notebook start-notebook.sh --NotebookNotary.db_file=:memory:
 ```
 
 `NotebookNotary.db_file=:memory:` -- при переносе состояния, внутренняя sqlite бд теряет права, временное решение для того чтобы пофиксить это, сделать эту бд in memory.
+
+заходим в образ jupyter lab и в конфиг pip проставляем:
+
+```shell
+sudo docker exec -it jupyter bash
+```
+
+```shell
+nano /etc/pip.conf
+```
+
+```
+[install]
+target = /pips
+```
 
 заходим в Jubyter lab, запускаем ячейки, сохраняем
 
@@ -94,9 +116,11 @@ sudo docker checkpoint create --checkpoint-dir ~/checkpoint jupyter save
 ```shell
 sudo tar -czvf save.tar.gz checkpoint/save
 sudo tar -czvf jovyan.tar.gz jovyan
+sudo tar -czvf pips.tar.gz pips
 
 cp save.tar.gz fmyar-diploma-test
 cp jovyan.tar.gz fmyar-diploma-test
+cp pips.tar.gz fmyar-diploma-test
 ```
 
 #### VM2
@@ -104,7 +128,7 @@ cp jovyan.tar.gz fmyar-diploma-test
 запускаем докер образ jupyter-lab с нужными флагами, и в старте делаем /bin/true, это нужно для того чтобы создать контейнер с нужными volume.
 
 ```shell
-sudo docker run  --user root -v ~/jovyan:/home/jovyan/ -e CHOWN_HOME=yes -e CHOWN_HOME_OPTS='-R' --name jupyter -p 8888:8888 jupyter/scipy-notebook /bin/true
+sudo docker run  --user root -v ~/jovyan:/home/jovyan/ -v ~/pips:/pips -e CHOWN_HOME=yes -e CHOWN_HOME_OPTS='-R' -e CHOWN_EXTRA="/pips" -e PYTHONPATH="/pips" --name jupyter -p 8888:8888 jupyter/scipy-notebook /bin/true
 ```
 
 (делаем из под рута)
@@ -114,9 +138,11 @@ sudo docker run  --user root -v ~/jovyan:/home/jovyan/ -e CHOWN_HOME=yes -e CHOW
 ```shell
 cp fmyar-diploma-test/jovyan.tar.gz .
 cp fmyar-diploma-test/save.tar.gz .
+cp fmyar-diploma-test/pips.tar.gz .
 
 sudo tar -xzvf save.tar.gz 
 sudo tar -xzvf jovyan.tar.gz 
+sudo tar -xzvf pips.tar.gz
 ```
 
 нужно скопировать чекпоинт в директорию с чекпоинтами у образа
