@@ -616,6 +616,24 @@ checkpoint compress size=33040167
 jovyan compress size=5141
 ```
 
+ssd
+
+```
+result time: 0:02:57.755046
+docker checkpoint create: 0:00:54.715933
+tar time: 0:00:12.194744
+cp time: 0:00:01.163206
+restore time (with http request): 0:01:49.681159
+result time: 0:01:49.659901
+cp tar time: 0:00:00.469969
+tar time: 0:00:11.139877
+cp checkpoint time: 0:00:29.447020
+docker start time: 0:01:08.601407
+checkpoint size=1211351505
+checkpoint compress size=32627477
+jovyan compress size=5131
+```
+
 ### 2cpu 6ram
 ```
 result time: 0:02:10.403493
