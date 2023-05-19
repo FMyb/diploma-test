@@ -19,6 +19,15 @@ import fasttext
 model = fasttext.train_supervised(input="cooking.train")
 ```
 
+### Files descriptors
+```python
+f = open('file.txt', 'r')
+f.readline()
+f.readline()
+```
+
+перенос 
+
 ### Toloka-kit (ok)
 ```python
 %pip install toloka-kit==0.1.10
