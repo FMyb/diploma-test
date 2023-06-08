@@ -51,7 +51,7 @@ sudo apt install s3fs
 mkdir fmyar-diploma-test
 sudo nano /etc/fuse.conf 
 # uncooment user_allow_other
-AWSSECRETACCESSKEY=YCPHQY_dFg-K1ADSjd5uGA9u5gKTdQP9gaEzw07X AWSACCESSKEYID=YCAJExOvLBjN2HbsMqk0yQksw /usr/bin/s3fs -f -d -d fmyar-diploma-test ~/fmyar-diploma-test -o url=https://storage.yandexcloud.net/ -o allow_other -o rw -o mp_umask=0000 -o umask=0000 -o use_cache=/tmp -o enable_noobj_cache -o kernel_cache -o max_background=1000 -o max_stat_cache_size=100000 -o multipart_size=52 -o parallel_count=30 -o multireq_max=30 -o connect_timeout=60 -o readwrite_timeout=60
+AWSSECRETACCESSKEY=YCPqApy9u-84c4SvXfjvMZ1SSsCK2Q37HFzMDW9K AWSACCESSKEYID=YCAJE_v1vflwAgAfdc75dZF1k /usr/bin/s3fs -f -d -d fmyar-diploma-test ~/fmyar-diploma-test -o url=https://storage.yandexcloud.net/ -o allow_other -o rw -o mp_umask=0000 -o umask=0000 -o use_cache=/tmp -o enable_noobj_cache -o kernel_cache -o max_background=1000 -o max_stat_cache_size=100000 -o multipart_size=52 -o parallel_count=30 -o multireq_max=30 -o connect_timeout=60 -o readwrite_timeout=60
 
 # restore
 
@@ -165,3 +165,26 @@ sudo docker run --user root -v ~/jovyan:/home/jovyan/ -v ~/pips:/pips -e CHOWN_H
 # docker run --user root -e CHOWN_HOME=yes -e CHOWN_HOME_OPTS='-R' -e CHOWN_EXTRA="/pips" -e PYTHONPATH="/pips" --name jupyter -p 8888:8888  fmyar/fmyar-diploma-jupyter start-notebook.sh --NotebookNotary.db_file=:memory:
 
 sudo AWSSECRETACCESSKEY=YCPHQY_dFg-K1ADSjd5uGA9u5gKTdQP9gaEzw07X AWSACCESSKEYID=YCAJExOvLBjN2HbsMqk0yQksw python3 main.py
+
+
+sudo docker run --user root -v ~/jovyan:/home/jovyan/ -e CHOWN_HOME=yes -e CHOWN_HOME_OPTS='-R' --name jupyter -p 8888:8888 jupyter/scipy-notebook  start-notebook.sh --NotebookNotary.db_file=:memory:
+
+(01.277984)    238: Error (criu/files-reg.c:2259): Can't open file opt/conda/lib/python3.10/site-packages/fasttext_pybind.cpython-310-x86_64-linux-gnu.so on restore: No such file or directory
+
+git clone https://github.com/checkpoint-restore/criu-image-streamer.git
+sudo apt install cargo
+cd criu-image-streamer
+make
+
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
+
+aws --endpoint-url=https://storage.yandexcloud.net s3 ls --recursive s3://fmyar-diploma-test
+
+exec 10< <(aws --endpoint-url=https://storage.yandexcloud.net s3 cp s3://fmyar-diploma-test/img-1.lz4 - | lz4 -d - -)
+exec 11< <(aws --endpoint-url=https://storage.yandexcloud.net s3 cp s3://fmyar-diploma-test/img-2.lz4 - | lz4 -d - -)
+exec 12< <(aws --endpoint-url=https://storage.yandexcloud.net s3 cp s3://fmyar-diploma-test/img-3.lz4 - | lz4 -d - -)
+
+criu-image-streamer --images-dir /tmp capture | lz4 - - | aws --endpoint-url=https://storage.yandexcloud.net s3 cp - s3://fmyar-diploma-test/checkpoints/img.lz4 &
+aws --endpoint-url=https://storage.yandexcloud.net s3 cp s3://fmyar-diploma-test/checkpoints/img.lz4 - | lz4 - - | criu-image-streamer --images-dir /tmp serve &

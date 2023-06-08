@@ -619,3 +619,15 @@ sudo docker rm jupyter
 rm -r jovyan
 rm -r pips
 sudo docker run --user root -v ~/jovyan:/home/jovyan/ -e CHOWN_HOME=yes -e CHOWN_HOME_OPTS='-R'  --name jupyter -p 8888:8888  jupyter/scipy-notebook start-notebook.sh --NotebookNotary.db_file=:memory:
+
+
+#!bash
+sleep 10 & # The app to be checkpointed
+APP_PID=$!
+
+exec 10> >(lz4 - - | aws --endpoint-url=https://storage.yandexcloud.net s3 cp - s3://fmyar-diploma-test/img-1.lz4)
+exec 11> >(lz4 - - | aws --endpoint-url=https://storage.yandexcloud.net s3 cp - s3://fmyar-diploma-test/img-2.lz4)
+exec 12> >(lz4 - - | aws --endpoint-url=https://storage.yandexcloud.net s3 cp - s3://fmyar-diploma-test/img-3.lz4)
+
+criu-image-streamer --images-dir /tmp --shard-fds 10,11,12 capture &
+criu dump --images-dir /tmp --stream --shell-job --tree $APP_PID
